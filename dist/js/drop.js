@@ -1,4 +1,4 @@
-/*! tether-drop 1.4.1 */
+/*! tether-drop 1.4.2 */
 
 (function(root, factory) {
   if (typeof define === 'function' && define.amd) {
@@ -89,6 +89,9 @@ var MIRROR_ATTACH = {
 };
 
 var allDrops = {};
+
+var openHandlerEvent = undefined,
+    closeHandlerEvent = undefined;
 
 // Drop can be included in external libraries.  Calling createContext gives you a fresh
 // copy of drop which won't interact with other copies on the page (beyond calling the document events).
@@ -348,10 +351,18 @@ function createContext() {
             _this2.close(event);
           };
 
-          for (var i = 0; i < clickEvents.length; ++i) {
-            var clickEvent = clickEvents[i];
-            this._on(this.target, clickEvent, openHandler);
-            this._on(document, clickEvent, closeHandler);
+          //if Hammerjs exists, rely on its magic for tap events, instead of praying for iOS to give you events in the right order
+          if (window.Hammer) {
+            openHandlerEvent = new Hammer(this.target);
+            closeHandlerEvent = new Hammer(document.body);
+            openHandlerEvent.on('tap', openHandler);
+            closeHandlerEvent.on('tap', closeHandler);
+          } else {
+            for (var i = 0; i < clickEvents.length; ++i) {
+              var clickEvent = clickEvents[i];
+              this._on(this.target, clickEvent, openHandler);
+              this._on(document, clickEvent, closeHandler);
+            }
           }
         }
 
@@ -530,6 +541,11 @@ function createContext() {
           var handler = _boundEvents$i.handler;
 
           element.removeEventListener(_event, handler);
+        }
+
+        if (window.Hammer) {
+          openHandlerEvent.off('tap');
+          closeHandlerEvent.off('tap');
         }
 
         this._boundEvents = [];

@@ -59,6 +59,8 @@ const MIRROR_ATTACH = {
 
 let allDrops = {};
 
+let openHandlerEvent, closeHandlerEvent;
+
 // Drop can be included in external libraries.  Calling createContext gives you a fresh
 // copy of drop which won't interact with other copies on the page (beyond calling the document events).
 
@@ -298,11 +300,20 @@ function createContext(options={}) {
           this.close(event);
         };
 
-        for (let i = 0; i < clickEvents.length; ++i) {
-          const clickEvent = clickEvents[i];
-          this._on(this.target, clickEvent, openHandler);
-          this._on(document, clickEvent, closeHandler);
+        //if Hammerjs exists, rely on its magic for tap events, instead of praying for iOS to give you events in the right order
+        if (window.Hammer) {
+            openHandlerEvent = new Hammer(this.target);
+            closeHandlerEvent = new Hammer(document.body);
+            openHandlerEvent.on('tap', openHandler);
+            closeHandlerEvent.on('tap', closeHandler);
+        } else {
+            for (let i = 0; i < clickEvents.length; ++i) {
+                const clickEvent = clickEvents[i];
+                this._on(this.target, clickEvent, openHandler);
+                this._on(document, clickEvent, closeHandler);
+            }
         }
+
       }
 
       let inTimeout = null;
@@ -471,6 +482,11 @@ function createContext(options={}) {
       for (let i = 0; i < this._boundEvents.length; ++i) {
         const {element, event, handler} = this._boundEvents[i];
         element.removeEventListener(event, handler);
+      }
+
+      if (window.Hammer) {
+          openHandlerEvent.off('tap');
+          closeHandlerEvent.off('tap');
       }
 
       this._boundEvents = [];
