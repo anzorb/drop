@@ -92,9 +92,6 @@ var allDrops = {};
 
 var openHandlerEvent = undefined,
     closeHandlerEvent = undefined;
-var hammerProps = {
-  recognizers: [[Hammer.Tap]]
-};
 
 // Drop can be included in external libraries.  Calling createContext gives you a fresh
 // copy of drop which won't interact with other copies on the page (beyond calling the document events).
@@ -356,8 +353,12 @@ function createContext() {
 
           //if Hammerjs exists, rely on its magic for tap events, instead of praying for iOS to give you events in the right order
           if (window.Hammer) {
-            openHandlerEvent = new Hammer.Manager(this.target, hammerProps);
-            closeHandlerEvent = new Hammer.Manager(document.body, hammerProps);
+            openHandlerEvent = new Hammer.Manager(this.target, {
+              recognizers: [[Hammer.Tap]]
+            });
+            closeHandlerEvent = new Hammer.Manager(document.body, {
+              recognizers: [[Hammer.Tap]]
+            });
             openHandlerEvent.on('tap', openHandler);
             closeHandlerEvent.on('tap', closeHandler);
           } else {
